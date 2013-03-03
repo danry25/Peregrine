@@ -37,44 +37,6 @@ with open('irc.pid', 'w') as f:
 #mylist will be a list containing the true random numbers.
 #def foo(): for i in range(5): return i # returns 0
 
-server_data = {
-'irc.nexuswar.com' : {
-    'port' : 6667,
-    'nickname' : 'Peregrine',
-    'channels' : ['#bots', '#stagecrew', '#necrolounge'],
-    'object' : None
-    }, # note the comma
-'irc.chatspike.net' : {
-    'port' : 6667,
-    'nickname' : 'Peregrine',
-    'channels' : ['#uespwiki', '#bots', '#trspam', '#equilibrium', '#Aetherius'],
-    'object' : None
-    },
-'staticfree.foonetic.net' : {
-    'port' : 6667,
-    'nickname' : 'Peregrine',
-    'channels' : ['#bots', '#boats'],
-    'object' : None
-    },
-##'irc.deviantart.com' : {
-##    'port' : 6667,
-##    'nickname' : 'Peregrine',
-##    'channels' : ['#bots', '#devart'],
-##    'object' : None
-##    },
-'mindjail.subluminal.net' : {
-    'port' : 6667,
-    'nickname' : 'Peregrine',
-    'channels' : ['#bots', '#boats'],
-    'object' : None
-    },
-'verne.freenode.net' : {
-    'port' : 6667,
-    'nickname' : 'HaskillBot',
-    'channels' : ['#necrolounge'],
-    'object' : None
-    }
-}
 
 irc = irclib.IRC()
 
@@ -99,7 +61,7 @@ disabled = load_data('disabled.bot')
 dnd = load_data('dnd.bot', {1:"SOMETHING'S RONG LOL"})
 nickserv = load_data('nickserv.bot')
 tfw = load_data('tfw.bot')
-seen = load_data('seen.bot')
+seen = load_data('seen.bot', {'BROKEN': {'action': 'not working', 'secs': 0, 'lines': 0}}, override=False)
 adminlist = []
 sadminlist = []
 memory = {}
@@ -107,7 +69,18 @@ niven = stuffz.niven
 sandvich = stuffz.sandvich
 userlist={}
 vendlist=[]
-#dnd=stuffz.dnd
+output_limit={
+'dnd':{'limit':2.0,'last_used':0.0},
+'vend':{'limit':2.0,'last_used':0.0},
+'blend':{'limit':2.0,'last_used':0.0},
+'tweet':{'limit':2.0,'last_used':0.0},
+'tfw':{'limit':2.0,'last_used':0.0},
+'niven':{'limit':2.0,'last_used':0.0},
+'abuse':{'limit':2.0,'last_used':0.0},
+'blame':{'limit':2.0,'last_used':0.0},
+'treat':{'limit':2.0,'last_used':0.0}
+}
+
 sdw = re.compile("<a href=\"http://en\.wikipedia\.org/wiki/.*\">(.*)</a>")
 uespregex = re.compile("<a href=\"/wiki/(.*)\" title=")
 titlefind = re.compile("<title\s?>(.*)<\/title\s?>", re.I)
@@ -182,6 +155,7 @@ signal.signal( signal.SIGTERM, shutdown )
 
 
 class twitter_class:
+    """This is actually something I'm proud of!  I did this (not tweepy, the class)! :D"""
     def __init__(self):
         if os.path.exists(os.sep.join([os.getcwd(), 'files', 'twitter.bot'])):
             self.login = load_data('twitter.bot')
@@ -227,6 +201,52 @@ class twitter_class:
 
 twitter=twitter_class()
 
+jtvircpass = nickserv['atreus11.jtvirc.com']
+
+server_data = {
+'irc.nexuswar.com' : {
+    'port' : 6667,
+    'nickname' : 'Peregrine',
+    'channels' : ['#bots', '#stagecrew', '#necrolounge'],
+    'object' : None,
+    'password' : None
+    }, # note the comma
+'irc.chatspike.net' : {
+    'port' : 6667,
+    'nickname' : 'Peregrine',
+    'channels' : ['#uespwiki', '#bots', '#trspam', '#equilibrium', '#Aetherius'],
+    'object' : None,
+    'password' : None
+    },
+'staticfree.foonetic.net' : {
+    'port' : 6667,
+    'nickname' : 'Peregrine',
+    'channels' : ['#bots', '#boats'],
+    'object' : None,
+    'password' : None
+    },
+'mindjail.subluminal.net' : {
+    'port' : 6667,
+    'nickname' : 'Peregrine',
+    'channels' : ['#bots', '#boats'],
+    'object' : None,
+    'password' : None
+    },
+'verne.freenode.net' : {
+    'port' : 6667,
+    'nickname' : 'Peregrine',
+    'channels' : ['#necrolounge'],
+    'object' : None,
+    'password' : None
+    },
+'atreus11.jtvirc.com' : {
+    'port' : 6667,
+    'nickname' : 'AtryBot',
+    'channels' : ['#atreus11'],
+    'object' : None,
+    'password' : jtvircpass
+    }
+}
 
 
 def onWelcome(connection, event):
@@ -247,8 +267,7 @@ def onPubmsg(connection, event):
     nick = ''.join(nick)
     words = message.split()
     lwords = lowm.split()
-    if channel==connection.get_nickname(): channel=nick
-    #jercos can suck a dick :V
+    if channel==connection.get_nickname(): channel=nick # Basic query support, don't blame me if it goes wrong
     try:
         action='speaking in %s' % channel
         if nick.lower() in seen:
@@ -256,14 +275,10 @@ def onPubmsg(connection, event):
             seen[nick.lower()]['action']=action
             if 'lines' in seen[nick.lower()]: seen[nick.lower()]['lines']+=1
             else: seen[nick.lower()]['lines']=1
-            if 'chars' in seen[nick.lower()]: seen[nick.lower()]['chars']+=len(message)
-            else: seen[nick.lower()]['chars']=len(message)
-##            if 'lols' in seen[nick.lower()]: seen[nick.lower()]['lols']+=message.lower().count('lol')
-##            else: seen[nick.lower()]['lols']=message.lower().count('lol')
         else:
-            seen[nick.lower()]={'secs':time.time(),'action':action,'lines':1,'chars':len(message)}#,'lols':message.lower().count('lol')}
+            seen[nick.lower()]={'secs':time.time(),'action':action,'lines':1}
         if lowm == "!version":
-            connection.privmsg(channel, 'I am version .831k :( (You act like this bot will ever be worthy of a version 1)')
+            connection.privmsg(channel, 'I am version .832g :( (You act like this bot will ever be worthy of a version 1)')
         if lowm.startswith("!wp "):
             args = message[4:]
             args=urllib.urlencode({'' :args})
@@ -313,7 +328,6 @@ def onPubmsg(connection, event):
             else: m='%s minutes, ' % str(minutes)
             connection.privmsg(channel, 'I was born on Sunday, April 19th, 2009, at 14:07:10.  That was %s%s%s%s seconds ago.' % (d,h,m,seconds))
         if lowm.startswith('~toggle ') and nick in adminlist:
-    #disabled[server][channel]
             if len(words) == 2:
                 if words[1] in disabled[connection.server][channel.lower()]:
                     disabled[connection.server][channel.lower()].remove(words[1])
@@ -374,11 +388,6 @@ def onPubmsg(connection, event):
         if lowm == '!rejoin all' and nick in adminlist:
             for channel in server_data[connection.server]['channels']:
                 connection.join(channel)
-        #131246 <@Maid> You can use all alphanumeric, `, |, _, [, ]
-        #131253 <@Maid> Also ^, yeah
-        #131256 <&Atreus> k.
-        #131309 <@Maid> I think you can use {}<> too, but don't recall
-        #131314 * Maid is now known as {}
         if (lowm.startswith('!abuse') or lowm.startswith('~abuse')) and enabled(connection.server, channel, 'abuse') and "#"==channel[0]:
             if len(lowm)>7:
                 f = ' '.join(words[1:])
@@ -421,21 +430,21 @@ def onPubmsg(connection, event):
                     area = urllib.urlencode({'':area})[1:]
                     letter=tfw[nick.lower()]['fck']
                 if letter=='f':
-                    url = 'http://www.thefuckingweather.com/?zipcode=%s' % area
+                    url = 'http://thefuckingweather.com/?where=%s' % area
                     units = 'DEGREES FAHRENHEIT'
                 else:
-                    url = 'http://www.thefuckingweather.com/?zipcode=%s&CELSIUS=yes' % area
+                    url = 'http://thefuckingweather.com/?where=%s&unit=c' % area
                 code = httpget(url)
-                weather = code.split('<div id="content"><div class="large" >',1)[1].split('</div>',1)[0].split('<br />')
-                degrees = weather[0][:-7]
+                weather = code.split("""<p class="large"><span class="temperature" tempf=\"""")[1].split(">",1)[1].split("""</p>\r\n\t\t<table id="inputArea" class="formTable">""")[0]
+                degrees = weather.split("<",1)[0]
                 if letter=='k':
                     degrees=str(float(degrees)+273.15)
                     units = 'KELVIN'
                 elif letter=='c': units='DEGREES CELSIUS'
-                comment = '. '.join(weather[2:])
-                comments = code.split('<span>')[1].split('</span>')[0]
+                remark = weather.split(""""remark">""",1)[1].split("</p>",1)[0]
+                flavor = weather.split(""""flavor">""",1)[1]
                 dtime=difs(time.time(),a)
-                connection.privmsg(channel, '%s: %s %s?!  %s.  %s (%s second%s)' % (temp, degrees, units, comment, comments, dtime, ((dtime <> '1.00' and 's') or '')))
+                connection.privmsg(channel, '%s: %s %s?!  %s.  %s (%s second%s)' % (temp, degrees, units, remark, flavor, dtime, ((dtime <> '1.00' and 's') or '')))
                 del code
             except:
                 if len(lwords)==1 and not nick.lower() in tfw:
@@ -459,7 +468,8 @@ def onPubmsg(connection, event):
                     else:
                         connection.privmsg(channel, 'You fail, good sir.')
             except:
-                connection.privmsg(channel, 'Error')
+#                connection.privmsg(channel, 'Error')
+                pass
         if lowm.startswith('!niven') and enabled(connection.server, channel, 'niven'):
             if len(words)>1:
                 if lwords[1] in niven.keys():
@@ -549,13 +559,13 @@ def onPubmsg(connection, event):
                 else: m='%s minutes, ' % str(minutes)
                 connection.privmsg(channel, '%s last seen %s%s%s%s seconds ago, %s.' % (temp,d,h,m,seconds,action))
             else: connection.privmsg(channel, 'Nope!  Haven\'t seen them.')
-        if lowm.startswith('!treat ') and len(lwords)>1:
+        if lowm.startswith('!treat ') and len(lwords)>1 and enabled(connection.server, channel, 'treat'):
             treated=' '.join(words[1:])
             if treated.lower() == connection.get_nickname().lower():
                 connection.action(channel, 'wags his tail.')
             else:
                 connection.action(channel, 'gives a treat to ' + treated)
-        if (lowm.startswith('!blame ') or lowm.startswith('!blames ')) and len(lwords)>1:
+        if (lowm.startswith('!blame ') or lowm.startswith('!blames ')) and len(lwords)>1 and enabled(connection.server, channel, 'blame'):
             blamed=' '.join(words[1:])
             if blamed.lower() == connection.get_nickname().lower():
                 connection.action(channel, 'hangs head in shame.')
@@ -564,31 +574,10 @@ def onPubmsg(connection, event):
         if lowm.startswith('~delseen ') and len(lwords)>1 and nick in adminlist:
             del seen[lowm[9:]]
             connection.privmsg(channel, '%s deleted from seen.' % lowm[9:])
-        if lowm.startswith('!stats ') and len(words)>2:
-##            if lwords[1]=='lols' and lwords[2] in seen:
-##                lols=str(seen[lwords[2]]['lols'])
-##                lines=seen[lwords[2]]['lines']
-##                lolpercentage=str(float(lols)/float(lines)*100.0)[:5]
-##                connection.privmsg(channel, '%s has said "lol" %s times, about %s%% percent of their lines contain it.' % (lwords[2],lols,lolpercentage))
-            if lwords[1]=='lines' and lwords[2] in seen:
-                connection.privmsg(channel, '%s has spoken %s lines.' % (lwords[2],seen[lwords[2]]['lines']))
-            if (lwords[1]=='characters' or lwords[1]=='chars' or lwords[1]=='letters') and lwords[2] in seen:
-                chars=str(seen[lwords[2]]['chars'])
-                lines=seen[lwords[2]]['lines']
-                charaverage=str(float(chars)/float(lines))[:5]
-                connection.privmsg(channel, '%s has typed %s characters, resulting in a %s average per line.' % (lwords[2],chars,charaverage))
         if nick in sadminlist and lowm.startswith('~dellines'):
             n1 = len(seen)
             for name in seen.keys():
                 if seen[name]['lines']<11:
-                    del seen[name]
-            n2 = len(seen)
-            diff=difs(n1,n2)
-            connection.privmsg(channel, '%s names cleared.' % diff)
-        if nick in sadminlist and lowm.startswith('~delchars'):
-            n1 = len(seen)
-            for name in seen.keys():
-                if seen[name]['chars']<21:
                     del seen[name]
             n2 = len(seen)
             diff=difs(n1,n2)
@@ -629,7 +618,7 @@ def onPubmsg(connection, event):
             else:
                 n = random.choice(dnd.keys())
                 connection.privmsg(channel, '%s: %s' % (n, dnd[n]))
-        if lowm.startswith('!tweet ') and channel.lower()=='#necrolounge':
+        if lowm.startswith('!tweet ') and channel.lower()=='#necrolounge' and enabled(connection.server, channel, 'tweet'):
             if twitter.on:
                 tweet=message[7:]
                 if len(tweet)>140:
@@ -640,11 +629,12 @@ def onPubmsg(connection, event):
                     connection.privmsg(channel, 'You have tweeted!')
             else:
                 connection.privmsg(channel, 'Sorry, but the OAuth credentials have disappeared.  Bug Atreus to fix this.')
-        if lowm=='!vend':
+        if (lowm=='!vend' and enabled(connection.server, channel, 'vend')) or (lowm=='!blend' and enabled(connection.server, channel, 'blend')):
             global vendlist
             if not vendlist: vendlist = httpget('https://itvends.com/vend?action=vend&format=text&count=10').split('\n')
             vend=vendlist.pop()
-            vend='vends %s.' % vend
+            if lowm=="!vend": vend='vends %s.' % vend
+            else: vend='blends %s.' % vend
             connection.action(channel, vend)
         if lowm=='!maiq' or lowm=="!m'aiq":
             choice = random.choice(maiq)
@@ -657,8 +647,8 @@ def onPubmsg(connection, event):
             connection.privmsg(channel, traceback.format_exc().splitlines()[-1])
     if nick in sadminlist and lowm=='!quit':
         shutdown()
-    if nick in sadminlist and lowm=='!restart':
-        shutdown(restart=True)
+#    if nick in sadminlist and lowm=='!restart':
+#        shutdown(restart=True)
 
 
 def difs(a,b,prec=None):
@@ -682,29 +672,6 @@ def remove_dups(L):
         # the list, and if it does, delete it.
         if L[i] in L[:i]:
             del L[i]
-
-
-##def difd(e,s):
-##        t=str(e-s)
-##        t=t.replace('.',':').split(':')
-##        hours=int(t[0])
-##        minutes=int(t[1])
-##        secs=t[2]
-##        days=0
-##        while hours>=24:
-##            days+=1
-##            hours-=24
-##        if days==0: d=''
-##        elif days==1: d=' %s day, ' % str(days)
-##        else: d=' %s days, ' % str(days)
-##        if hours==0: h=''
-##        elif hours==1: h=' %s hour, ' % str(hours)
-##        else: h=' %s hours, ' % str(hours)
-##        if minutes==0: m=''
-##        elif minutes==1: m=' %s minute, ' % str(minutes)
-##        else: m=' %s minutes, ' % str(minutes)
-##        l=[d,h,m,secs]
-##        return l
 
 #>>> params = {"server":"mpilgrim", "database":"master", "uid":"sa", "pwd":"secret"}
 #>>> ["%s=%s" % (k, v) for k, v in params.items()]
@@ -798,13 +765,6 @@ def names(connection, event):
     if not channel in userlist[connection.server]: userlist[connection.server][channel] = []
     userlist[connection.server][channel].extend(nicks)
     remove_dups(userlist[connection.server][channel])
-##            s = arguments.split()
-##            if s[1]=="353" and s[3]=="=":
-##                nicks = s[5:]
-##                nicks = [nick_strip(nick) for nick in nicks]
-##                if not connection.server in userlist: userlist[connection.server]={}
-##                userlist[connection.server][s[4]]=nicks
-##            del s
 
 def onPrivmsg(connection, event):
     message = event.arguments()[0]
@@ -870,7 +830,7 @@ def onQuit(connection, event):
             seen[nick.lower()]['secs']=time.time()
             seen[nick.lower()]['action']=action
         else:
-            seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+            seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0}
         if nick in adminlist:
             adminlist.remove(nick)
         if nick in sadminlist:
@@ -888,7 +848,7 @@ def onPart(connection, event):
         seen[nick.lower()]['secs']=time.time()
         seen[nick.lower()]['action']=action
     else:
-        seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0}
     if nick in adminlist:
         adminlist.remove(nick)
     if nick in sadminlist:
@@ -910,7 +870,7 @@ def onJoin(connection, event):
         seen[nick.lower()]['secs']=time.time()
         seen[nick.lower()]['action']=action
     else:
-        seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[nick.lower()]={'secs':time.time(),'action':action,'lines':0}
 #disabled[connection.server][channel].append(temp[1])
     if not connection.server in disabled:
         disabled[connection.server] = {}
@@ -937,13 +897,13 @@ def nick(connection, event):
         seen[newnick.lower()]['secs']=time.time()
         seen[newnick.lower()]['action']=action
     else:
-        seen[newnick.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[newnick.lower()]={'secs':time.time(),'action':action,'lines':0}
     action='changing nick to ' + newnick
     if oldnick.lower() in seen:
         seen[oldnick.lower()]['secs']=time.time()
         seen[oldnick.lower()]['action']=action
     else:
-        seen[oldnick.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[oldnick.lower()]={'secs':time.time(),'action':action,'lines':0}
     if oldnick in adminlist:
         adminlist.remove(oldnick)
         adminlist.append(newnick)
@@ -1037,8 +997,8 @@ def uespregextest(url2,url,connection,channel):
             break
     if url.lower().endswith('s') and y:
         url=url[:-1]
-        url2=url2[:-1]
-        code=httpget(url2)
+        url_temp=url2[:-1]
+        code=httpget(url_temp)
         match = uespregex.findall(code)
         match = match[:-8]
         for pagename in match:
@@ -1060,11 +1020,20 @@ def enabled(server, channel, script):
             if script in disabled[server][channel.lower()]:
                  return False
             else:
-                 return True
+                 enable =  True
         else:
-            return True
+            enable =  True
     else:
-        return True
+        enable = True
+    if script in output_limit.keys() and enable:
+        now = time.time()
+        last_time = output_limit[script]['last_used']
+        dtime=difs(now, last_time)
+        if float(dtime) > output_limit[script]['limit']:
+            enable = True
+            output_limit[script]['last_used'] = now
+        else: enable = False
+    return enable
 
 def onKick(connection,event):
     kicker = nicksplit(event.source())
@@ -1077,13 +1046,13 @@ def onKick(connection,event):
         seen[kicked.lower()]['secs']=time.time()
         seen[kicked.lower()]['action']=action
     else:
-        seen[kicked.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[kicked.lower()]={'secs':time.time(),'action':action,'lines':0}
     action='kicking %s from %s for: %s' % (kicked,channel,reason)
     if kicker.lower() in seen:
         seen[kicker.lower()]['secs']=time.time()
         seen[kicker.lower()]['action']=action
     else:
-        seen[kicker.lower()]={'secs':time.time(),'action':action,'lines':0,'chars':0}#,'lols':0}
+        seen[kicker.lower()]={'secs':time.time(),'action':action,'lines':0}
     if kicked in adminlist:
         adminlist.remove(kicked)
     if kicked in sadminlist:
@@ -1124,7 +1093,7 @@ def onDisconnect(connection, event):
 irc.add_global_handler('welcome', onWelcome)
 irc.add_global_handler('pubmsg', onPubmsg)
 irc.add_global_handler('pubmsg', UESP)
-irc.add_global_handler('pubmsg', dots)
+#irc.add_global_handler('pubmsg', dots)
 irc.add_global_handler('privnotice', onPrivmsg)
 irc.add_global_handler('privmsg', onPubmsg)
 irc.add_global_handler('quit', onQuit)
@@ -1145,27 +1114,32 @@ def ping(server_object, server):
         #server_object.disconnect() <-- don't need this because the failed ping calls onDisconnect!
         port = server_data[server]['port']
         nickname = server_data[server]['nickname']
+        server_password = server_data[server]['password']
         server_object = irc.server()
         try:
             try:
                 #3 try statements makes me feel dirty and kinky
-                server_object.connect(server, port, nickname, ircname="Peregrine.  Owned by Atreus.")
+                #not worse than anyhting else I do on this bot, though
+                server_object.connect(server, port, nickname, ircname="Peregrine.  Owned by Atreus.", password = server_password)
             except:
-                server_object.connect(server, port, nickname)
+                server_object.connect(server, port, nickname, password = server_password)
         except:
             print 'Unable to connect to %s (ping)' % server
+            import traceback
+            print traceback.format_exc()
     irc.execute_delayed(300, ping, (server_object, server))
 
 
 for server in server_data:
     port = server_data[server]['port']
     nickname = server_data[server]['nickname']
+    server_password = server_data[server]['password']
     server_object = irc.server()
     try:
         try:
-            server_object.connect(server, port, nickname, ircname="Peregrine.  Owned by Atreus.")
+            server_object.connect(server, port, nickname, ircname="Peregrine.  Owned by Atreus.", password = server_password)
         except:
-            server_object.connect(server, port, nickname)
+            server_object.connect(server, port, nickname, password=server_password)
     except:
         print 'Unable to connect to %s' % server
     server_object.temp_timer = threading.Timer(300, ping, args=[server_object, server])
